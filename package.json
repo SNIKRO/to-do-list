@@ -18,7 +18,8 @@
   "homepage": "https://github.com/SNIKRO/to-do-list#readme",
   "dependencies": {
     "eslint-config-standard": "^16.0.3",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "sqlite3": "^5.0.2"
   },
   "devDependencies": {
     "eslint": "^7.32.0",
