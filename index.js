@@ -1,19 +1,20 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const sqlite3 = require('sqlite3');
 
-const db = new sqlite3.Database('todo.sqlite');
 const app = express();
-
-db.serialize(() => {
-  db.run('CREATE TABLE lorem (info TEXT)');
-});
-
-db.close();
-
-app.get('/', (_request, response) => {
-  response.send('<h2>HELLO WORLD!</h2>');
+const db = new sqlite3.Database('todo.sqlite', (error) => {
+  if (error) {
+    return console.error(error.message);
+  }
+  console.log('Connected to the database.');
 });
 
 app.listen(3000, undefined, () => {
   console.log('Server is online');
+});
+db.close((error) => {
+  if (error) {
+    console.error(error.message);
+  }
+  console.log('Conection has be closed.');
 });
