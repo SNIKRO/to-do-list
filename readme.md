@@ -8,5 +8,6 @@ The project will implement an API for to-do list.
 - [ ] Changing task
 ## The project will be implemented using:
 * Node.js/Express
+* SQLite
 
 ## Instruction for running the project locally:
