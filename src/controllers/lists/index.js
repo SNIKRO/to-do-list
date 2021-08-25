@@ -32,7 +32,7 @@ router.post('/', (request, response) => {
       response.sendStatus(501);
       return;
     }
-    response.status(201).send(this.lastID);
+    response.status(201).json(this.lastID);
   });
 });
 // change list by id
