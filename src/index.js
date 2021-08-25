@@ -10,7 +10,7 @@ app.use(bodyParser.urlencoded({
 }));
 
 app.use('/lists', listRouter);
-app.use('/lists/items', itemRouter);
+app.use('/lists', itemRouter);
 
 app.listen(3000, undefined, () => {
   console.log('Server is online');

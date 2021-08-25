@@ -5,7 +5,7 @@ const router = express.Router();
 
 // get all item by list id
 router.get('/:id/items', (request, response) => {
-  db.get('SELECT * FROM item WHERE list_id = ?', [request.params.id], (error, rows) => {
+  db.all('SELECT * FROM item WHERE list_id = ?', [request.params.id], (error, rows) => {
     if (error) {
       console.error(error.message);
       response.sendStatus(500);
@@ -15,5 +15,15 @@ router.get('/:id/items', (request, response) => {
   });
 });
 
+router.get('/:id/items/:itemID', (request, response) => {
+  db.get('SELECT * FROM item WHERE id = ? AND list_id = ?', [request.params.itemID, request.params.id], (error, row) => {
+    if (error) {
+      console.error(error.message);
+      response.sendStatus(404);
+      return;
+    }
+    response.send(row);
+  });
+});
 
 module.exports = router;
