@@ -28,13 +28,13 @@ router.get('/:id/items/:itemID', (request, response) => {
 });
 // create item
 router.post('/:id/items', (request, response) => {
-  db.run('INSERT INTO item(description, list_id) VALUES (?, ?)', [request.body.description, request.params.id], (error) => {
+  db.run('INSERT INTO item(description, list_id) VALUES (?, ?)', [request.body.description, request.params.id], function(error) {
     if (error) {
       console.error(error.message);
       response.sendStatus(501);
       return;
     }
-    response.status(201).send(this.lastId);
+    response.status(201).json(this.lastId);
   });
 });
 
