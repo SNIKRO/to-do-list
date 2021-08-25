@@ -26,13 +26,14 @@ router.get('/:id', (request, response) => {
 });
 // create new list
 router.post('/', (request, response) => {
-  db.run('INSERT INTO list(name, user_id) VALUES (?, ?)', [request.body.name, request.body.user_id], (error) => {
+  db.run('INSERT INTO list(name, user_id) VALUES (?, ?)', [request.body.name, request.body.user_id], function(error) {
     if (error) {
       console.error(error.message);
       response.sendStatus(501);
+      return;
     }
+    response.status(201).send(this.lastID);
   });
-  response.send('SUCCESS');
 });
 // change list by id
 router.put('/:id', (request, response) => {
