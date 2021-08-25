@@ -1,3 +1,4 @@
+const { response } = require('express');
 const express = require('express');
 const db = require('../../db');
 
@@ -14,7 +15,7 @@ router.get('/:id/items', (request, response) => {
     response.send(rows);
   });
 });
-
+// get single item by id
 router.get('/:id/items/:itemID', (request, response) => {
   db.get('SELECT * FROM item WHERE id = ? AND list_id = ?', [request.params.itemID, request.params.id], (error, row) => {
     if (error) {
@@ -23,6 +24,17 @@ router.get('/:id/items/:itemID', (request, response) => {
       return;
     }
     response.send(row);
+  });
+});
+// create item
+router.post('/:id/items', (request, response) => {
+  db.run('INSERT INTO item(description, list_id) VALUES (?, ?)', [request.body.description, request.params.id], (error) => {
+    if (error) {
+      console.error(error.message);
+      response.sendStatus(501);
+      return;
+    }
+    response.status(201).send(this.lastId);
   });
 });
 
