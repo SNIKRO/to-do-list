@@ -23,7 +23,11 @@ router.get('/', (request, response) => {
       }
       response.send({
         rows,
-        count,
+        pagination: {
+          limit,
+          offset,
+          count,
+        },
       });
     });
   });
