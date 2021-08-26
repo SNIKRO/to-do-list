@@ -10,7 +10,24 @@ router.get('/', (request, response) => {
       response.sendStatus(500);
       return;
     }
-    response.send(rows);
+    const {
+      page = 0,
+      perPage = 10,
+    } = request.query;
+    const total = rows.length;
+    const totalPages = Math.ceil(total / perPage);
+    const start = page * perPage;
+    const data = rows.slice(start, perPage + start);
+
+    response.send({
+      data,
+      pagination: {
+        page,
+        perPage,
+        total,
+        totalPages,
+      },
+    });
   });
 });
 // request list by id
@@ -26,7 +43,7 @@ router.get('/:id', (request, response) => {
 });
 // create new list
 router.post('/', (request, response) => {
-  db.run('INSERT INTO list(name, user_id) VALUES (?, ?)', [request.body.name, request.body.user_id], function(error) {
+  db.run('INSERT INTO list(name, user_id) VALUES (?, ?)', [request.body.name, request.body.user_id], function (error) {
     if (error) {
       console.error(error.message);
       response.sendStatus(500);
