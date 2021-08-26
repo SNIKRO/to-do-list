@@ -15,8 +15,8 @@ router.get('/:id/items', (request, response) => {
   });
 });
 // get single item by id
-router.get('/:id/items/:itemID', (request, response) => {
-  db.get('SELECT * FROM item WHERE id = ? AND list_id = ?', [request.params.itemID, request.params.id], (error, row) => {
+router.get('/:listId/items/:itemID', (request, response) => {
+  db.get('SELECT * FROM item WHERE id = ? AND list_id = ?', [request.params.itemID, request.params.listId], (error, row) => {
     if (error) {
       console.error(error.message);
       response.sendStatus(404);
@@ -26,8 +26,8 @@ router.get('/:id/items/:itemID', (request, response) => {
   });
 });
 // create item
-router.post('/:id/items', (request, response) => {
-  db.run('INSERT INTO item(description, list_id, status) VALUES (?, ?, ?)', [request.body.description, request.params.id, request.body.status], function(error) {
+router.post('/:listId/items', (request, response) => {
+  db.run('INSERT INTO item(description, list_id, status) VALUES (?, ?, ?)', [request.body.description, request.params.listId, request.body.status], function(error) {
     if (error) {
       console.error(error.message);
       response.sendStatus(500);
@@ -37,8 +37,8 @@ router.post('/:id/items', (request, response) => {
   });
 });
 // update item by id
-router.put('/:id/items/:itemID', (request, response) => {
-  db.run('UPDATE item SET status = ?, description = ? WHERE list_id = ? AND id = ?', [request.body.status, request.body.description, request.params.id, request.params.itemID], (error) => {
+router.put('/:listId/items/:itemId', (request, response) => {
+  db.run('UPDATE item SET status = ?, description = ? WHERE list_id = ? AND id = ?', [request.body.status, request.body.description, request.params.listId, request.params.itemId], (error) => {
     if (error) {
       console.error(error.message);
       response.sendStatus(500);
@@ -48,8 +48,8 @@ router.put('/:id/items/:itemID', (request, response) => {
   response.sendStatus(200);
 });
 // delete item by id
-router.delete('/:id/items/:itemID', (request, response) => {
-  db.run('DELETE FROM item WHERE list_id = ?  AND id = ?', [request.params.id, request.params.itemID], (error) => {
+router.delete('/:listid/items/:itemId', (request, response) => {
+  db.run('DELETE FROM items WHERE list_id = ?  AND id = ?', [request.params.listid, request.params.itemId], (error) => {
     if (error) {
       console.error(error.message);
       response.sendStatus(500);
