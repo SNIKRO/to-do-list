@@ -4,29 +4,27 @@ const db = require('../../db');
 const router = express.Router();
 // take all list
 router.get('/', (request, response) => {
-  db.all('SELECT * FROM list WHERE user_id = ?', [1], (error, rows) => {
+  const {
+    limit = 25,
+    offset = 0,
+  } = request.query;
+
+  db.all('SELECT * FROM list WHERE user_id = ? LIMIT ? OFFSET ? ', [1, limit, offset], (error, rows) => {
     if (error) {
       console.error(error.message);
       response.sendStatus(500);
       return;
     }
-    const {
-      page = 0,
-      perPage = 10,
-    } = request.query;
-    const total = rows.length;
-    const totalPages = Math.ceil(total / perPage);
-    const start = page * perPage;
-    const data = rows.slice(start, perPage + start);
-
-    response.send({
-      data,
-      pagination: {
-        page,
-        perPage,
-        total,
-        totalPages,
-      },
+    db.get('SELECT Count(id) as total FROM list', [], (err, count) => {
+      if (err) {
+        console.error(error.message);
+        response.sendStatus(500);
+        return;
+      }
+      response.send({
+        rows,
+        count,
+      });
     });
   });
 });
@@ -35,6 +33,10 @@ router.get('/:id', (request, response) => {
   db.get('SELECT * FROM list WHERE id = ? AND user_id = ?', [request.params.id, 1], (error, row) => {
     if (error) {
       console.error(error.message);
+      response.sendStatus(500);
+      return;
+    }
+    if (row === undefined) {
       response.sendStatus(404);
       return;
     }
