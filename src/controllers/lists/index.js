@@ -29,7 +29,7 @@ router.post('/', (request, response) => {
   db.run('INSERT INTO list(name, user_id) VALUES (?, ?)', [request.body.name, request.body.user_id], function(error) {
     if (error) {
       console.error(error.message);
-      response.sendStatus(501);
+      response.sendStatus(500);
       return;
     }
     response.status(201).json(this.lastID);
@@ -40,19 +40,19 @@ router.put('/:id', (request, response) => {
   db.run('UPDATE list SET name = ? WHERE id = ? AND user_id = ?', [request.body.name, request.params.id, 1], (error) => {
     if (error) {
       console.error(error.message);
-      response.sendStatus(501);
+      response.sendStatus(500);
     }
   });
-  response.send('List update!');
+  response.sendStatus(200);
 });
 // delete list by id
 router.delete('/:id', (request, response) => {
   db.run('DELETE FROM list WHERE id = ? AND user_id = ?', [request.params.id, 1], (error) => {
     if (error) {
       console.error(error.message);
-      response.sendStatus(501);
+      response.sendStatus(500);
     }
   });
-  response.sendStatus(410);
+  response.sendStatus(200);
 });
 module.exports = router;
