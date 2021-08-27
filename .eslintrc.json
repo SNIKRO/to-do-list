@@ -8,5 +8,9 @@
     ],
     "parserOptions": {
         "sourceType": "module"
+    },
+    "rules": {
+        "no-console": "off",
+        "func-names": "off"
     }
 }

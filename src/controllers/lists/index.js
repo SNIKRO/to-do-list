@@ -49,14 +49,16 @@ router.get('/:id', (request, response) => {
 });
 // create new list
 router.post('/', (request, response) => {
-  db.run('INSERT INTO list(name, user_id) VALUES (?, ?)', [request.body.name, request.body.user_id], function (error) {
-    if (error) {
-      console.error(error.message);
-      response.sendStatus(500);
-      return;
-    }
-    response.status(201).json(this.lastID);
-  });
+  db.run('INSERT INTO list(name, user_id) VALUES (?, ?)',
+    [request.body.name, 1],
+    function (error) {
+      if (error) {
+        console.error(error.message);
+        response.sendStatus(500);
+        return;
+      }
+      response.status(201).json(this.lastID);
+    });
 });
 // change list by id
 router.put('/:id', (request, response) => {
