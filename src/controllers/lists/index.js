@@ -15,7 +15,7 @@ router.get('/', (request, response) => {
       response.sendStatus(500);
       return;
     }
-    db.get('SELECT Count(id) as total FROM list', [], (err, count) => {
+    db.get('SELECT Count(id) as total FROM list WHERE user_id = ?', [1], (err, count) => {
       if (err) {
         console.error(error.message);
         response.sendStatus(500);
@@ -26,7 +26,7 @@ router.get('/', (request, response) => {
         pagination: {
           limit,
           offset,
-          count,
+          total: count.total,
         },
       });
     });
