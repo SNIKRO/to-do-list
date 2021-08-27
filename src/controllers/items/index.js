@@ -4,14 +4,33 @@ const db = require('../../db');
 const router = express.Router();
 
 // get all item by list id
-router.get('/:id/items', (request, response) => {
-  db.all('SELECT * FROM item WHERE list_id = ?', [request.params.id], (error, rows) => {
+router.get('/:listId/items', (request, response) => {
+  const {
+    limit = 25,
+    offset = 0,
+  } = request.query;
+
+  db.all('SELECT * FROM item WHERE list_id = ? LIMIT ? OFFSET ? ', [request.params.listId, limit, offset], (error, rows) => {
     if (error) {
       console.error(error.message);
       response.sendStatus(500);
       return;
     }
-    response.send(rows);
+    db.get('SELECT Count(id) as total FROM item WHERE list_id = ?', [request.params.listId], (err, count) => {
+      if (err) {
+        console.error(error.message);
+        response.sendStatus(500);
+        return;
+      }
+      response.send({
+        rows,
+        pagination: {
+          limit,
+          offset,
+          total: count.total,
+        },
+      });
+    });
   });
 });
 // get single item by id
@@ -19,6 +38,10 @@ router.get('/:listId/items/:itemID', (request, response) => {
   db.get('SELECT * FROM item WHERE id = ? AND list_id = ?', [request.params.itemID, request.params.listId], (error, row) => {
     if (error) {
       console.error(error.message);
+      response.sendStatus(500);
+      return;
+    }
+    if (row === undefined) {
       response.sendStatus(404);
       return;
     }
@@ -48,8 +71,8 @@ router.put('/:listId/items/:itemId', (request, response) => {
   response.sendStatus(200);
 });
 // delete item by id
-router.delete('/:listid/items/:itemId', (request, response) => {
-  db.run('DELETE FROM items WHERE list_id = ?  AND id = ?', [request.params.listid, request.params.itemId], (error) => {
+router.delete('/:listId/items/:itemId', (request, response) => {
+  db.run('DELETE FROM items WHERE list_id = ?  AND id = ?', [request.params.listId, request.params.itemId], (error) => {
     if (error) {
       console.error(error.message);
       response.sendStatus(500);
