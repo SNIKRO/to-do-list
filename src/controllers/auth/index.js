@@ -19,9 +19,6 @@ router.post('/sign-in', (request, response) => {
     password,
   } = request.body;
 
-  if (!email.trim()) {
-    response.status(400).json('email can not be empty');
-  }
   db.get(`SELECT id, password FROM user 
   WHERE email = ? `,
   [email],
@@ -38,21 +35,17 @@ router.post('/sign-in', (request, response) => {
       return;
     }
 
-    if (row.id
-      && bcrypt.compareSync(password, row.password)) {
-      const accessToken = jwt.sign(row.id, 'SECRET');
-      const refreshToken = uuid();
-      db.run(`INSERT INTO token(user_id, token) 
+    const accessToken = jwt.sign(row.id, 'SECRET');
+    const refreshToken = uuid();
+    db.run(`INSERT INTO token(user_id, token) 
       VALUES (?,?)`,
-      [row.id, refreshToken], (err) => {
-        if (err) {
-          console.error(error.message);
-          response.sendStatus(500);
-          return;
-        }
-      });
-      response.status(200).json({ accessToken, refreshToken });
-    }
+    [row.id, refreshToken], (err) => {
+      if (err) {
+        console.error(err.message);
+        response.sendStatus(500);
+      }
+    });
+    response.status(200).json({ accessToken, refreshToken });
   });
 });
 
