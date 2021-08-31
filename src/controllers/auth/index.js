@@ -44,8 +44,8 @@ router.post('/sign-in', (request, response) => {
         console.error(err.message);
         response.sendStatus(500);
       }
+      response.status(200).json({ accessToken, refreshToken });
     });
-    response.status(200).json({ accessToken, refreshToken });
   });
 });
 
