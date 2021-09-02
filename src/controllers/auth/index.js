@@ -2,6 +2,7 @@ const { Router } = require('express');
 const jwt = require('jsonwebtoken'); // access token
 const { v4: uuid } = require('uuid');// refresh token
 const bcrypt = require('bcrypt');
+const config = require('../../../config.json');
 const db = require('../../db');
 
 const router = Router();
@@ -29,13 +30,13 @@ router.post('/sign-in', (request, response) => {
       return;
     }
 
-    if (!row.id
+    if (!row
       || !bcrypt.compareSync(password, row.password)) {
       response.sendStatus(403);
       return;
     }
 
-    const accessToken = jwt.sign(row.id, 'SECRET');
+    const accessToken = jwt.sign(row.id, config.KEY);
     const refreshToken = uuid();
     db.run(`INSERT INTO token(user_id, token) 
       VALUES (?,?)`,
