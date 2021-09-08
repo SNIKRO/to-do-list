@@ -50,4 +50,23 @@ router.post('/sign-in', (request, response) => {
   });
 });
 
+router.post('/log-out', (request, response) => {
+  db.run(
+    `DELETE FROM token 
+    WHERE user_id IN (
+      SELECT * FROM  token
+      WHERE user_id = ?
+    )
+    `,
+    [1],
+    (error) => {
+      if (error) {
+        console.log(error.message);
+        response.sendStatus(500);
+        return;
+      }
+      response.sendStatus(200);
+    },
+  );
+});
 module.exports = router;
