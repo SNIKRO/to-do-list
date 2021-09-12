@@ -104,4 +104,40 @@ router.post('/log-out', authMiddleware, (request, response) => {
     },
   );
 });
+
+router.post('/refresh', authMiddleware, (request, response) => {
+  db.get(
+    `SELECT count(*) as count FROM token
+    WHERE user_id = ? AND token = ?
+    `,
+    [request.user, request.body.refreshToken],
+    (error, row) => {
+      if (error) {
+        console.log(error.message);
+        response.sendStatus(500);
+        return;
+      }
+      if (row.count === 0) {
+        response.sendStatus(401);
+        return;
+      }
+      const accessToken = jwt.sign({ userId: request.user }, config.KEY);
+      const refreshToken = uuid();
+      db.run(
+        `UPDATE token SET token = ?
+        WHERE user_id = ? AND token = ?
+        `,
+        [refreshToken, request.user, request.body.refreshToken],
+        (updateError) => {
+          if (updateError) {
+            console.log(updateError.message);
+            response.sendStatus(500);
+            return;
+          }
+          response.send({ accessToken, refreshToken });
+        },
+      );
+    },
+  );
+});
 module.exports = router;
