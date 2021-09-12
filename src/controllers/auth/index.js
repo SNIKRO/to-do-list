@@ -4,16 +4,10 @@ const { v4: uuid } = require('uuid');// refresh token
 const bcrypt = require('bcrypt');
 const config = require('../../../config.json');
 const db = require('../../db');
+const authMiddleware = require('../../middlewares/auth');
 
 const router = Router();
-/**
- * клиент должен передать логин и пароль
- * метод должен проверить что юзер с таким логином есть в базе и предоставленный пароль верный
- * если юзер нет или его пароль не соответвует ввденому, то вернуть 403
- * если юзер сущетсвует и пароль верный, то сгеренрировать пару аксестокен и рефреш токен
- * рефреш токен сохранить в базу с юзер ид который мы достали из базы по логину
- * вернуть на клиент пару аксес токен и рефреш токен
- */
+
 router.post('/sign-in', (request, response) => {
   const {
     email,
@@ -29,14 +23,14 @@ router.post('/sign-in', (request, response) => {
       response.sendStatus(500);
       return;
     }
-
+    console.log(row);
     if (!row
       || !bcrypt.compareSync(password, row.password)) {
       response.sendStatus(403);
       return;
     }
 
-    const accessToken = jwt.sign(row.id, config.KEY);
+    const accessToken = jwt.sign({ userId: row.id }, config.KEY);
     const refreshToken = uuid();
     db.run(`INSERT INTO token(user_id, token) 
       VALUES (?,?)`,
@@ -50,15 +44,56 @@ router.post('/sign-in', (request, response) => {
   });
 });
 
-router.post('/log-out', (request, response) => {
+router.post('/sign-up', (request, response) => {
+  const {
+    name,
+    email,
+    password,
+  } = request.body;
+  if (!name?.trim() || !email?.trim() || !password?.trim()) {
+    response.status(400).json('name, email, password are required');
+    return;
+  }
+  db.get(
+    `SELECT id FROM user
+    WHERE email = ?`,
+    [email],
+    (error, row) => {
+      if (error) {
+        console.error(error);
+        response.sendStatus(500);
+        return;
+      }
+      if (row) {
+        response.status(400).send('email has been taken');
+        return;
+      }
+      db.run(
+        'INSERT INTO user(name, email, password) VALUES (?, ?, ?)',
+        [
+          name,
+          email,
+          bcrypt.hashSync(password, bcrypt.genSaltSync(10), null),
+        ],
+        (insertionError) => {
+          if (insertionError) {
+            console.error(insertionError);
+            response.sendStatus(500);
+            return;
+          }
+          response.sendStatus(201);
+        },
+      );
+    },
+  );
+});
+
+router.post('/log-out', authMiddleware, (request, response) => {
   db.run(
     `DELETE FROM token 
-    WHERE user_id IN (
-      SELECT * FROM  token
-      WHERE user_id = ?
-    )
+    WHERE user_id = ? 
     `,
-    [1],
+    [request.user],
     (error) => {
       if (error) {
         console.log(error.message);
