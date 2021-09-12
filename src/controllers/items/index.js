@@ -15,7 +15,7 @@ router.get('/:listId/items', (request, response) => {
     INNER JOIN list ON item.list_id = list.id 
     WHERE item.list_id = ? AND list.user_id = ? 
     LIMIT ? OFFSET ? `,
-    [1, request.params.listId, limit, offset],
+    [request.user, request.params.listId, limit, offset],
     (error, rows) => {
       if (error) {
         console.error(error.message);
@@ -52,7 +52,7 @@ router.get('/:listId/items/:itemID', (request, response) => {
     `SELECT * FROM item 
     INNER JOIN list ON list.id = item.list_id
     WHERE item.id = ? AND item.list_id = ? AND list.user_id = ?`,
-    [request.params.itemID, request.params.listId, 1],
+    [request.params.itemID, request.params.listId, request.user],
     (error, row) => {
       if (error) {
         console.error(error.message);
@@ -70,7 +70,7 @@ router.get('/:listId/items/:itemID', (request, response) => {
 // create item
 router.post('/:listId/items', (request, response) => {
   db.get('SELECT id FROM list WHERE id = ? AND user_id = ?',
-    [request.params.listId, 1],
+    [request.params.listId, request.user],
     (checkError, row) => {
       if (checkError) {
         console.error(checkError.message);
@@ -99,7 +99,7 @@ router.put('/:listId/items/:itemId', (request, response) => {
     `SELECT * FROM item 
     INNER JOIN list ON list.id = item.list_id 
     WHERE item.id = ? AND item.list_id = ? AND list.user_id = ?`,
-    [request.params.itemId, request.params.listId, 1],
+    [request.params.itemId, request.params.listId, request.user],
     (error, row) => {
       if (error) {
         console.error(error.message);
@@ -136,7 +136,7 @@ router.delete('/:listId/items/:itemId', (request, response) => {
       INNER JOIN list ON item.list_id = list.id 
       WHERE item.list_id = ? AND item.id = ? AND list.user_id = ?
     )`,
-    [request.params.listId, request.params.itemId, 1],
+    [request.params.listId, request.params.itemId, request.user],
     (error) => {
       if (error) {
         console.error(error.message);
