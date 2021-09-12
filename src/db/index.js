@@ -44,6 +44,14 @@ const db = new sqlite3.Database('todo.sqlite', (error) => {
       console.error(itemError.message);
     }
   });
+
+  db.run(`CREATE TABLE IF NOT EXISTS shared_list (
+    user_id integer not null,
+    list_id integer not null,
+    FOREIGN KEY(user_id) REFERENCES user(id),
+    FOREIGN KEY(list_id) REFERENCES list(id),
+    UNIQUE(user_id, list_id)
+  )`);
   console.log('Connected to the database.');
 });
 
