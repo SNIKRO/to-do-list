@@ -16,6 +16,12 @@ const db = new sqlite3.Database('todo.sqlite', (error) => {
     }
   });
 
+  db.run(`CREATE TABLE IF NOT EXISTS token(
+    user_id integer not null,
+    token text UNIQUE not null,
+    FOREIGN KEY (user_id) REFERENCES user(id)
+  )`);
+
   db.run(`CREATE TABLE IF NOT EXISTS list ( 
     id integer primary key,
     name text not null,

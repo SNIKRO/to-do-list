@@ -9,13 +9,13 @@ router.get('/', (request, response) => {
     offset = 0,
   } = request.query;
 
-  db.all('SELECT * FROM list WHERE user_id = ? LIMIT ? OFFSET ? ', [1, limit, offset], (error, rows) => {
+  db.all('SELECT * FROM list WHERE user_id = ? LIMIT ? OFFSET ? ', [request.user, limit, offset], (error, rows) => {
     if (error) {
       console.error(error.message);
       response.sendStatus(500);
       return;
     }
-    db.get('SELECT Count(id) as total FROM list WHERE user_id = ?', [1], (err, count) => {
+    db.get('SELECT Count(id) as total FROM list WHERE user_id = ?', [request.user], (err, count) => {
       if (err) {
         console.error(error.message);
         response.sendStatus(500);
@@ -34,7 +34,7 @@ router.get('/', (request, response) => {
 });
 // request list by id
 router.get('/:id', (request, response) => {
-  db.get('SELECT * FROM list WHERE id = ? AND user_id = ?', [request.params.id, 1], (error, row) => {
+  db.get('SELECT * FROM list WHERE id = ? AND user_id = ?', [request.params.id, request.user], (error, row) => {
     if (error) {
       console.error(error.message);
       response.sendStatus(500);
@@ -50,7 +50,7 @@ router.get('/:id', (request, response) => {
 // create new list
 router.post('/', (request, response) => {
   db.run('INSERT INTO list(name, user_id) VALUES (?, ?)',
-    [request.body.name, 1],
+    [request.body.name, request.user],
     function (error) {
       if (error) {
         console.error(error.message);
@@ -62,7 +62,7 @@ router.post('/', (request, response) => {
 });
 // change list by id
 router.put('/:id', (request, response) => {
-  db.run('UPDATE list SET name = ? WHERE id = ? AND user_id = ?', [request.body.name, request.params.id, 1], (error) => {
+  db.run('UPDATE list SET name = ? WHERE id = ? AND user_id = ?', [request.body.name, request.params.id, request.user], (error) => {
     if (error) {
       console.error(error.message);
       response.sendStatus(500);
@@ -72,7 +72,7 @@ router.put('/:id', (request, response) => {
 });
 // delete list by id
 router.delete('/:id', (request, response) => {
-  db.run('DELETE FROM list WHERE id = ? AND user_id = ?', [request.params.id, 1], (error) => {
+  db.run('DELETE FROM list WHERE id = ? AND user_id = ?', [request.params.id, request.user], (error) => {
     if (error) {
       console.error(error.message);
       response.sendStatus(500);
