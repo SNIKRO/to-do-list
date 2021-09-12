@@ -66,9 +66,10 @@ router.put('/:id', (request, response) => {
     if (error) {
       console.error(error.message);
       response.sendStatus(500);
+      return;
     }
+    response.sendStatus(200);
   });
-  response.sendStatus(200);
 });
 // delete list by id
 router.delete('/:id', (request, response) => {
@@ -76,8 +77,60 @@ router.delete('/:id', (request, response) => {
     if (error) {
       console.error(error.message);
       response.sendStatus(500);
+      return;
     }
+    response.sendStatus(200);
   });
-  response.sendStatus(200);
+});
+// shared list
+router.post('/:listId/share', (request, response) => {
+  db.get(
+    `SELECT id FROM list
+    WHERE user_id = ? AND id = ?
+    `,
+    [request.user, request.params.listId],
+    (error, row) => {
+      if (error) {
+        console.error(error.message);
+        response.sendStatus(500);
+        return;
+      }
+      if (!row) {
+        response.sendStatus(403);
+        return;
+      }
+      db.get(
+        `SELECT id FROM user
+        WHERE email = ?
+        `,
+        [request.body.email],
+        (userError, userRow) => {
+          if (userError) {
+            console.error(userError.message);
+            response.sendStatus(500);
+            return;
+          }
+          if (!userRow) {
+            response.status(404).send('User not found');
+            return;
+          }
+          db.run(
+            `INSERT INTO shared_list(user_id, list_id)
+            VALUES (?, ?) ON CONFLICT DO NOTHING
+            `,
+            [userRow.id, request.params.listId],
+            (insertError) => {
+              if (insertError) {
+                console.error(insertError.message);
+                response.sendStatus(500);
+                return;
+              }
+              response.send('List is shared to user');
+            },
+          );
+        },
+      );
+    },
+  );
 });
 module.exports = router;
