@@ -1,7 +1,6 @@
 const { Router } = require('express');
 const jwt = require('jsonwebtoken'); // access token
 const { v4: uuid } = require('uuid');// refresh token
-const bcrypt = require('bcrypt');
 const config = require('../../../config.json');
 const db = require('../../db');
 const authMiddleware = require('../../middlewares/auth');
@@ -36,38 +35,16 @@ router.post('/sign-up', (request, response) => {
     response.status(400).json('name, email, password are required');
     return;
   }
-  db.get(
-    `SELECT id FROM user
-    WHERE email = ?`,
-    [email],
-    (error, row) => {
-      if (error) {
-        console.error(error);
-        response.sendStatus(500);
-        return;
-      }
-      if (row) {
-        response.status(400).send('email has been taken');
-        return;
-      }
-      db.run(
-        'INSERT INTO user(name, email, password) VALUES (?, ?, ?)',
-        [
-          name,
-          email,
-          bcrypt.hashSync(password, bcrypt.genSaltSync(10), null),
-        ],
-        (insertionError) => {
-          if (insertionError) {
-            console.error(insertionError);
-            response.sendStatus(500);
-            return;
-          }
-          response.sendStatus(201);
-        },
-      );
-    },
-  );
+
+  authService.signUp(name, email, password).then(() => {
+    response.sendStatus(201);
+  }).catch((error) => {
+    if (error instanceof ServiceError) {
+      response.status(400).send(error.message);
+      return;
+    }
+    response.sendStatus(500);
+  });
 });
 
 router.post('/log-out', authMiddleware, (request, response) => {
