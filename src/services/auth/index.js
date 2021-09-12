@@ -14,10 +14,12 @@ function signIn(email, password) {
       (error, row) => {
         if (error) {
           reject(error);
+          return;
         }
         if (!row
           || !bcrypt.compareSync(password, row.password)) {
           reject(new ServiceError('Pair email/password is incorrect'));
+          return;
         }
         const accessToken = jwt.sign({ userId: row.id }, config.KEY);
         const refreshToken = uuid();
@@ -26,6 +28,7 @@ function signIn(email, password) {
         [row.id, refreshToken], (err) => {
           if (err) {
             reject(err);
+            return;
           }
           resolve({ accessToken, refreshToken });
         });
@@ -33,4 +36,41 @@ function signIn(email, password) {
     },
   );
 }
-module.exports = { signIn };
+
+function signUp(name, email, password) {
+  return new Promise(
+    (resolve, reject) => {
+      db.get(
+        `SELECT id FROM user
+        WHERE email = ?`,
+        [email],
+        (error, row) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          if (row) {
+            reject(new ServiceError('email has been taken'));
+            return;
+          }
+          db.run(
+            'INSERT INTO user(name, email, password) VALUES (?, ?, ?)',
+            [
+              name,
+              email,
+              bcrypt.hashSync(password, bcrypt.genSaltSync(10), null),
+            ],
+            (insertionError) => {
+              if (insertionError) {
+                reject(insertionError);
+                return;
+              }
+              resolve();
+            },
+          );
+        },
+      );
+    },
+  );
+}
+module.exports = { signIn, signUp };
