@@ -5,6 +5,8 @@ const bcrypt = require('bcrypt');
 const config = require('../../../config.json');
 const db = require('../../db');
 const authMiddleware = require('../../middlewares/auth');
+const authService = require('../../services/auth');
+const ServiceError = require('../../errors/service');
 
 const router = Router();
 
@@ -13,33 +15,14 @@ router.post('/sign-in', (request, response) => {
     email,
     password,
   } = request.body;
-
-  db.get(`SELECT id, password FROM user 
-  WHERE email = ? `,
-  [email],
-  (error, row) => {
-    if (error) {
-      console.error(error.message);
-      response.sendStatus(500);
+  authService.signIn(email, password).then((tokens) => {
+    response.send(tokens);
+  }).catch((error) => {
+    if (error instanceof ServiceError) {
+      response.status(403).send(error.message);
       return;
     }
-    if (!row
-      || !bcrypt.compareSync(password, row.password)) {
-      response.sendStatus(403);
-      return;
-    }
-
-    const accessToken = jwt.sign({ userId: row.id }, config.KEY);
-    const refreshToken = uuid();
-    db.run(`INSERT INTO token(user_id, token) 
-      VALUES (?,?)`,
-    [row.id, refreshToken], (err) => {
-      if (err) {
-        console.error(err.message);
-        response.sendStatus(500);
-      }
-      response.status(200).json({ accessToken, refreshToken });
-    });
+    response.sendStatus(500);
   });
 });
 
