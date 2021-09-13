@@ -74,14 +74,14 @@ function signUp(name, email, password) {
   );
 }
 
-function logOut(user) {
+function logOut(userId) {
   return new Promise(
     (resolve, reject) => {
       db.run(
         `DELETE FROM token 
         WHERE user_id = ? 
         `,
-        [user],
+        [userId],
         (error) => {
           if (error) {
             reject(error);
@@ -94,14 +94,14 @@ function logOut(user) {
   );
 }
 
-function refresh(user, oldRefreshToken) {
+function refresh(userId, oldRefreshToken) {
   return new Promise(
     (resolve, reject) => {
       db.get(
         `SELECT count(*) as count FROM token
         WHERE user_id = ? AND token = ?
         `,
-        [user, oldRefreshToken],
+        [userId, oldRefreshToken],
         (error, row) => {
           if (error) {
             reject(error);
@@ -111,13 +111,13 @@ function refresh(user, oldRefreshToken) {
             reject(new ServiceError('User unauthorized'));
             return;
           }
-          const accessToken = jwt.sign({ userId: user }, config.KEY);
+          const accessToken = jwt.sign({ userID: userId }, config.KEY);
           const refreshToken = uuid();
           db.run(
             `UPDATE token SET token = ?
             WHERE user_id = ? AND token = ?
             `,
-            [refreshToken, user, oldRefreshToken],
+            [refreshToken, userId, oldRefreshToken],
             (updateError) => {
               if (updateError) {
                 reject(updateError);
