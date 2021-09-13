@@ -5,23 +5,24 @@ const ServiceError = require('../../errors/service');
 
 const router = Router();
 
-router.post('/sign-in', (request, response) => {
+router.post('/sign-in', async (request, response) => {
   const {
     email,
     password,
   } = request.body;
-  authService.signIn(email, password).then((tokens) => {
+  try {
+    const tokens = await authService.signIn(email, password);
     response.send(tokens);
-  }).catch((error) => {
+  } catch (error) {
     if (error instanceof ServiceError) {
       response.status(403).send(error.message);
       return;
     }
     response.sendStatus(500);
-  });
+  }
 });
 
-router.post('/sign-up', (request, response) => {
+router.post('/sign-up', async (request, response) => {
   const {
     name,
     email,
@@ -31,35 +32,37 @@ router.post('/sign-up', (request, response) => {
     response.status(400).json('name, email, password are required');
     return;
   }
-
-  authService.signUp(name, email, password).then(() => {
+  try {
+    await authService.signUp(name, email, password);
     response.sendStatus(201);
-  }).catch((error) => {
+  } catch (error) {
     if (error instanceof ServiceError) {
       response.status(400).send(error.message);
       return;
     }
     response.sendStatus(500);
-  });
+  }
 });
 
-router.post('/log-out', authMiddleware, (request, response) => {
-  authService.logOut(request.user).then(() => {
+router.post('/log-out', authMiddleware, async (request, response) => {
+  try {
+    await authService.logOut(request.user);
     response.sendStatus(200);
-  }).catch((error) => {
+  } catch (error) {
     response.status(500).send(error.message);
-  });
+  }
 });
 
-router.post('/refresh', authMiddleware, (request, response) => {
-  authService.refresh(request.user, request.body.refreshToken).then((tokens) => {
+router.post('/refresh', authMiddleware, async (request, response) => {
+  try {
+    const tokens = await authService.refresh(request.user, request.body.refreshToken);
     response.send(tokens);
-  }).catch((error) => {
+  } catch (error) {
     if (error instanceof ServiceError) {
       response.status(401).send(error.message);
       return;
     }
     response.sendStatus(500);
-  });
+  }
 });
 module.exports = router;
