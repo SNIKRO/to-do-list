@@ -47,11 +47,7 @@ router.post('/log-out', authMiddleware, (request, response) => {
   authService.logOut(request.user).then(() => {
     response.sendStatus(200);
   }).catch((error) => {
-    if (error instanceof ServiceError) {
-      response.status(400).send(error.message); // what mistake should there be and should it?
-      return;
-    }
-    response.sendStatus(500);
+    response.status(500).send(error.message);
   });
 });
 
