@@ -1,5 +1,4 @@
 const express = require('express');
-const db = require('../../db');
 const listService = require('../../services/items');
 const ServiceError = require('../../errors/service');
 
