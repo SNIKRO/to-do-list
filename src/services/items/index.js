@@ -100,7 +100,7 @@ function updateListById(itemId, listId, userId, status, description) {
         `SELECT * FROM item 
             INNER JOIN list ON list.id = item.list_id 
             WHERE item.id = ? AND item.list_id = ? AND list.user_id = ?`,
-        [itemId, listId, user],
+        [itemId, listId, userId],
         (error, row) => {
           if (error) {
             reject(error);
@@ -155,6 +155,7 @@ function deleteList(listId, itemId, userId) {
 module.exports = {
   getAllItemsById,
   getSingleItemById,
+  updateListById,
   createList,
   deleteList,
 };
