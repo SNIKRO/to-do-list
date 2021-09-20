@@ -63,7 +63,7 @@ router.post('/:listId/share', async (request, response) => {
     response.send('List is shared to user');
   } catch (error) {
     if (error instanceof ServiceError) {
-      response.send(error.message);
+      response.status(404).send(error.message);
       return;
     }
     response.sendStatus(500);
