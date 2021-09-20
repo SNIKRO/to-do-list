@@ -11,7 +11,7 @@ router.post('/sign-in', async (request, response) => {
     password,
   } = request.body;
   try {
-    const tokens = await authService.signIn(email, password);
+    const tokens = await authService.signIn(request);
     response.send(tokens);
   } catch (error) {
     if (error instanceof ServiceError) {
