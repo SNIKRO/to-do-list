@@ -17,52 +17,19 @@ function signIn(email, password) {
       }
       const accessToken = jwt.sign({ userId: user.id }, config.KEY);
       const refreshToken = uuid();
-      db.run(`INSERT INTO token(user_id, token) 
-          VALUES (?,?)`,
-      [user.id, refreshToken], (err) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve({ accessToken, refreshToken });
-      });
+
+      userRepo.insertToken(user.id, refreshToken);
+      resolve({ accessToken, refreshToken });
     },
   );
 }
 
-function signUp(name, email, password) {
+function signUp(email, password) {
   return new Promise(
-    (resolve, reject) => {
-      db.get(
-        `SELECT id FROM user
-        WHERE email = ?`,
-        [email],
-        (error, row) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          if (row) {
-            reject(new ServiceError('email has been taken'));
-            return;
-          }
-          db.run(
-            'INSERT INTO user(name, email, password) VALUES (?, ?, ?)',
-            [
-              name,
-              email,
-              bcrypt.hashSync(password, bcrypt.genSaltSync(10), null),
-            ],
-            (insertionError) => {
-              if (insertionError) {
-                reject(insertionError);
-                return;
-              }
-              resolve();
-            },
-          );
-        },
-      );
+    (resolve, reject) => { // reject needed here?
+      const user = userRepo.getUser(email);
+      userRepo.insertUser(user.name, email, password);
+      resolve();
     },
   );
 }
@@ -70,19 +37,8 @@ function signUp(name, email, password) {
 function logOut(userId) {
   return new Promise(
     (resolve, reject) => {
-      db.run(
-        `DELETE FROM token 
-        WHERE user_id = ? 
-        `,
-        [userId],
-        (error) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          resolve();
-        },
-      );
+      userRepo.deleteUser(userId);
+      resolve();
     },
   );
 }
@@ -90,37 +46,10 @@ function logOut(userId) {
 function refresh(userId, oldRefreshToken) {
   return new Promise(
     (resolve, reject) => {
-      db.get(
-        `SELECT count(*) as count FROM token
-        WHERE user_id = ? AND token = ?
-        `,
-        [userId, oldRefreshToken],
-        (error, row) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          if (row.count === 0) {
-            reject(new ServiceError('User unauthorized'));
-            return;
-          }
-          const accessToken = jwt.sign({ userID: userId }, config.KEY);
-          const refreshToken = uuid();
-          db.run(
-            `UPDATE token SET token = ?
-            WHERE user_id = ? AND token = ?
-            `,
-            [refreshToken, userId, oldRefreshToken],
-            (updateError) => {
-              if (updateError) {
-                reject(updateError);
-                return;
-              }
-              resolve({ accessToken, refreshToken });
-            },
-          );
-        },
-      );
+      const accessToken = jwt.sign({ userID: userId }, config.KEY);
+      const refreshToken = uuid();
+      userRepo.refreshUserToken(userId, oldRefreshToken, accessToken, refreshToken);
+      resolve({ accessToken, refreshToken });
     },
   );
 }
