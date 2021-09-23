@@ -13,7 +13,7 @@ async function getUser(email) {
             reject(error);
             return;
           }
-          resolve(row);
+          resolve(row.count);
         },
       );
     },
@@ -30,11 +30,11 @@ async function insertUser(name, email, password) {
           email,
           bcrypt.hashSync(password, bcrypt.genSaltSync(10), null),
         ],
-        (error) => {
+        function (error) {
           if (error) {
             reject(error);
           }
-          resolve();
+          resolve(this.lastID);
         },
       );
     },
