@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const config = require('../../../config.json');
 const ServiceError = require('../../errors/service');
 const userRepo = require('../../repositories/user');
-const tokenRepo = require('../../repositories/tokenRepository');
+const tokenRepo = require('../../repositories/token');
 
 async function signIn(email, password) {
   const user = await userRepo.getUser(email);
@@ -29,24 +29,19 @@ function signUp(email, password) {
   );
 }
 
-function logOut(userId) {
-  return new Promise(
-    (resolve, reject) => {
-      userRepo.deleteUser(userId);
-      resolve();
-    },
-  );
+async function logOut(userId) {
+  await userRepo.deleteUser(userId);
 }
 
-function refresh(userId, oldRefreshToken) {
-  return new Promise(
-    (resolve, reject) => {
-      const accessToken = jwt.sign({ userID: userId }, config.KEY);
-      const refreshToken = uuid();
-      userRepo.refreshUserToken(userId, oldRefreshToken, accessToken, refreshToken);
-      resolve({ accessToken, refreshToken });
-    },
-  );
+async function refresh(userId, oldRefreshToken) {
+  const accessToken = jwt.sign({ userID: userId }, config.KEY);
+  const refreshToken = uuid();
+  const checkToken = await tokenRepo.getTokenCount(userId, oldRefreshToken);
+  if (checkToken === 0) {
+    return (new ServiceError('User unauthorized'));
+  }
+  await tokenRepo.refreshUserToken(userId, oldRefreshToken, accessToken, refreshToken);
+  return ({ accessToken, refreshToken });
 }
 
 module.exports = {

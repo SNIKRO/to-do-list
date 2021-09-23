@@ -1,4 +1,3 @@
-const ServiceError = require('../../errors/service');
 const db = require('../../db');
 
 async function insertToken(userId, refreshToken) {
@@ -20,40 +19,48 @@ async function insertToken(userId, refreshToken) {
   );
 }
 
-async function refreshUserToken(userId, oldRefreshToken, refreshToken) {
+async function getTokenCount(userId, oldRefreshToken) {
   await new Promise(
     (resolve, reject) => {
       db.get(
         `SELECT count(*) as count FROM token
-              WHERE user_id = ? AND token = ?
-              `,
+        WHERE user_id = ? AND token = ?
+        `,
         [userId, oldRefreshToken],
         (error, row) => {
           if (error) {
             reject(error);
             return;
           }
-          if (row.count === 0) {
-            reject(new ServiceError('User unauthorized'));
-            return;
-          }
-          db.run(
-            `UPDATE token SET token = ?
-                  WHERE user_id = ? AND token = ?
-                  `,
-            [refreshToken, userId, oldRefreshToken],
-            (updateError) => {
-              if (updateError) {
-                reject(updateError);
-                return;
-              }
-              resolve();
-            },
-          );
+          resolve(row.count);
         },
       );
     },
   );
 }
 
-module.exports = { insertToken, refreshUserToken };
+async function refreshUserToken(userId, oldRefreshToken, refreshToken) {
+  await new Promise(
+    (resolve, reject) => {
+      db.run(
+        `UPDATE token SET token = ?
+                  WHERE user_id = ? AND token = ?
+                  `,
+        [refreshToken, userId, oldRefreshToken],
+        (updateError) => {
+          if (updateError) {
+            reject(updateError);
+            return;
+          }
+          resolve();
+        },
+      );
+    },
+  );
+}
+
+module.exports = {
+  insertToken,
+  refreshUserToken,
+  getTokenCount,
+};
