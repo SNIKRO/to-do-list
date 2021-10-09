@@ -23,7 +23,6 @@ router.post('/sign-in', (request, response) => {
       response.sendStatus(500);
       return;
     }
-    console.log(row);
     if (!row
       || !bcrypt.compareSync(password, row.password)) {
       response.sendStatus(403);
