@@ -1,61 +1,27 @@
 const { request } = require('express');
 const ServiceError = require('../../errors/service');
 const db = require('../../db');
+const listRepo = require('../../repositories/list');
 
-function getAllList(userId, limit, offset) {
-  return new Promise((resolve, reject) => {
-    db.all(
-      `SELECT * FROM list 
-        WHERE user_id = ? LIMIT ? OFFSET ? `,
-      [userId, limit, offset],
-      (error, rows) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        db.get(
-          `SELECT Count(id) as total FROM list
-            WHERE user_id = ?`,
-          [userId],
-          (err, count) => {
-            if (err) {
-              reject(err);
-              return;
-            }
-            resolve({
-              rows,
-              pagination: {
-                limit,
-                offset,
-                total: count.total,
-              },
-            });
-          },
-        );
-      },
-    );
-  });
+async function getAllLists(userId, limit, offset) {
+  const lists = await listRepo.getListsByUserId(userId, limit, offset);
+  const total = await listRepo.getListsCountByUserId(userId);
+  return {
+    rows: lists,
+    pagination: {
+      limit,
+      offset,
+      total,
+    },
+  };
 }
 
-function getListById(listId, userId) {
-  return new Promise((resolve, reject) => {
-    db.get(
-      `SELECT * FROM list
-          WHERE id = ? AND user_id = ?`,
-      [listId, userId],
-      (error, row) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        if (row === undefined) {
-          reject(new ServiceError('Not found'));
-          return;
-        }
-        resolve(row);
-      },
-    );
-  });
+async function getListById(listId, userId) {
+  const list = await listRepo.getListById(listId, userId);
+  if (list === undefined) {
+    throw new ServiceError('Not found');
+  }
+  return list;
 }
 
 function createList(listName, userId) {
@@ -159,7 +125,7 @@ function shareList(userId, listId, email) {
   });
 }
 module.exports = {
-  getAllList,
+  getAllList: getAllLists,
   getListById,
   createList,
   updateList,
