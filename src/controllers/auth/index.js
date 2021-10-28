@@ -6,10 +6,7 @@ const ServiceError = require('../../errors/service');
 const router = Router();
 
 router.post('/sign-in', async (request, response) => {
-  const {
-    email,
-    password,
-  } = request.body;
+  const { email, password } = request.body;
   try {
     const tokens = await authService.signIn(email, password);
     response.send(tokens);
@@ -23,11 +20,7 @@ router.post('/sign-in', async (request, response) => {
 });
 
 router.post('/sign-up', async (request, response) => {
-  const {
-    name,
-    email,
-    password,
-  } = request.body;
+  const { name, email, password } = request.body;
   if (!name?.trim() || !email?.trim() || !password?.trim()) {
     response.status(400).json('name, email, password are required');
     return;

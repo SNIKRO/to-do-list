@@ -6,17 +6,9 @@ const router = express.Router();
 
 // get all item by list id
 router.get('/:listId/items', async (request, response) => {
-  const {
-    limit = 25,
-    offset = 0,
-  } = request.query;
+  const { limit = 25, offset = 0 } = request.query;
   try {
-    const allList = await listService.getAllItemsById(
-      request.user,
-      request.params.listId,
-      limit,
-      offset,
-    );
+    const allList = await listService.getAllItemsById(request.user, request.params.listId, limit, offset);
     response.send(allList);
   } catch (error) {
     response.status(500).send(error.message);
@@ -25,11 +17,7 @@ router.get('/:listId/items', async (request, response) => {
 // get single item by id
 router.get('/:listId/items/:itemID', async (request, response) => {
   try {
-    const singleList = await listService.getSingleItemById(
-      request.params.itemID,
-      request.params.listId,
-      request.user,
-    );
+    const singleList = await listService.getSingleItemById(request.params.itemID, request.params.listId, request.user);
     response.send(singleList);
   } catch (error) {
     if (error instanceof ServiceError) {
@@ -42,11 +30,7 @@ router.get('/:listId/items/:itemID', async (request, response) => {
 // create item
 router.post('/:listId/items', async (request, response) => {
   try {
-    const lastID = await listService.createList(
-      request.params.listId,
-      request.user,
-      request.body.description,
-    );
+    const lastID = await listService.createList(request.params.listId, request.user, request.body.description);
     response.status(200).send(lastID);
   } catch (error) {
     if (error instanceof ServiceError) {
@@ -65,7 +49,6 @@ router.put('/:listId/items/:itemId', async (request, response) => {
       request.user,
       request.body.status,
       request.body.description,
-
     );
     response.sendStatus(200);
   } catch (error) {
@@ -79,11 +62,7 @@ router.put('/:listId/items/:itemId', async (request, response) => {
 // delete item by id
 router.delete('/:listId/items/:itemId', async (request, response) => {
   try {
-    await listService.deleteList(
-      request.params.listId,
-      request.params.itemId,
-      request.user,
-    );
+    await listService.deleteList(request.params.listId, request.params.itemId, request.user);
     response.sendStatus(200);
   } catch (error) {
     response.status(500).send(error.message);

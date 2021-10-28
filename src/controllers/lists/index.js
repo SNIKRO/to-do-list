@@ -5,10 +5,7 @@ const ServiceError = require('../../errors/service');
 const router = express.Router();
 // take all list
 router.get('/', async (request, response) => {
-  const {
-    limit = 25,
-    offset = 0,
-  } = request.query;
+  const { limit = 25, offset = 0 } = request.query;
   try {
     const allLists = await listService.getAllList(request.user, limit, offset);
     response.send(allLists);
