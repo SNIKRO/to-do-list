@@ -20,13 +20,15 @@ const opts = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
   secretOrKey: config.KEY,
 };
-passport.use(new JwtStrategy(opts, ((jwtPayload, done) => {
-  if (!jwtPayload.userId) {
-    done(new Error('User does not exist'));
-    return;
-  }
-  done(null, jwtPayload.userId);
-})));
+passport.use(
+  new JwtStrategy(opts, (jwtPayload, done) => {
+    if (!jwtPayload.userId) {
+      done(new Error('User does not exist'));
+      return;
+    }
+    done(null, jwtPayload.userId);
+  }),
+);
 
 app.use(bodyParser.json());
 
