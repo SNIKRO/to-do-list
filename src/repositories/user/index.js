@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const db = require('../../db');
 
-async function getUser(email) {
+async function getUserByEmail(email) {
   await new Promise((resolve, reject) => {
     db.get(
       `SELECT * FROM user
@@ -34,26 +34,7 @@ async function insertUser(name, email, password) {
   });
 }
 
-async function deleteUser(userId) {
-  await new Promise((resolve, reject) => {
-    db.run(
-      `DELETE FROM token 
-         WHERE user_id = ? 
-        `,
-      [userId],
-      (error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve();
-      },
-    );
-  });
-}
-
 module.exports = {
-  getUser,
+  getUserByEmail,
   insertUser,
-  deleteUser,
 };

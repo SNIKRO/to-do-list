@@ -52,9 +52,27 @@ async function refreshUserToken(userId, oldRefreshToken, refreshToken) {
     );
   });
 }
+async function deleteTokenByUserId(userId) {
+  await new Promise((resolve, reject) => {
+    db.run(
+      `DELETE FROM token 
+         WHERE user_id = ? 
+        `,
+      [userId],
+      (error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      },
+    );
+  });
+}
 
 module.exports = {
   insertToken,
   refreshUserToken,
   getTokenCount,
+  deleteTokenByUserId,
 };

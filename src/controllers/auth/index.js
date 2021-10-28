@@ -48,7 +48,7 @@ router.post('/log-out', authMiddleware, async (request, response) => {
 
 router.post('/refresh', authMiddleware, async (request, response) => {
   try {
-    const tokens = await authService.refresh(request.user, request.body.refreshToken);
+    const tokens = await authService.refreshTokensPair(request.user, request.body.refreshToken);
     response.send(tokens);
   } catch (error) {
     if (error instanceof ServiceError) {
