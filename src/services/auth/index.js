@@ -7,9 +7,9 @@ const userRepo = require('../../repositories/user');
 const tokenRepo = require('../../repositories/token');
 
 async function signIn(email, password) {
-  const user = await userRepo.getUser(email);
+  const user = await userRepo.getUserByEmail(email);
   if (!user || !bcrypt.compareSync(password, user.password)) {
-    return new ServiceError('Pair email/password is incorrect');
+    throw new ServiceError('Pair email/password is incorrect');
   }
   const accessToken = jwt.sign({ userId: user.id }, config.KEY);
   const refreshToken = uuid();
@@ -18,25 +18,24 @@ async function signIn(email, password) {
   return { accessToken, refreshToken };
 }
 
-function signUp(email, password) {
-  return new Promise((resolve, reject) => {
-    // reject needed here?
-    const user = userRepo.getUser(email);
-    userRepo.insertUser(user.name, email, password);
-    resolve();
-  });
+async function signUp(name, email, password) {
+  const user = await userRepo.getUserByEmail(email);
+  if (user) {
+    throw new ServiceError('Email has been taken');
+  }
+  await userRepo.insertUser(name, email, password);
 }
 
 async function logOut(userId) {
-  await userRepo.deleteUser(userId);
+  await tokenRepo.deleteTokenByUserId(userId);
 }
 
-async function refresh(userId, oldRefreshToken) {
+async function refreshTokensPair(userId, oldRefreshToken) {
   const accessToken = jwt.sign({ userID: userId }, config.KEY);
   const refreshToken = uuid();
-  const checkToken = await tokenRepo.getTokenCount(userId, oldRefreshToken);
-  if (checkToken === 0) {
-    return new ServiceError('User unauthorized');
+  const tokenExists = !!(await tokenRepo.getTokenCount(userId, oldRefreshToken));
+  if (!tokenExists) {
+    throw new ServiceError('User unauthorized');
   }
   await tokenRepo.refreshUserToken(userId, oldRefreshToken, accessToken, refreshToken);
   return { accessToken, refreshToken };
@@ -46,5 +45,5 @@ module.exports = {
   signIn,
   signUp,
   logOut,
-  refresh,
+  refreshTokensPair,
 };
