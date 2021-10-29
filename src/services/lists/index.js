@@ -1,6 +1,6 @@
 const ServiceError = require('../../errors/service');
-const db = require('../../db');
 const listRepo = require('../../repositories/list');
+const userRepo = require('../../repositories/user');
 
 async function getAllLists(userId, limit, offset) {
   const lists = await listRepo.getListsByUserId(userId, limit, offset);
@@ -36,57 +36,19 @@ async function deleteList(listId, userId) {
   await listRepo.deleteList(listId, userId);
 }
 
-function shareList(userId, listId, email) {
-  return new Promise((resolve, reject) => {
-    db.get(
-      `SELECT id FROM list
-            WHERE user_id = ? AND id = ?
-            `,
-      [userId, listId],
-      (error, row) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        if (!row) {
-          reject(new ServiceError('Forbidden'));
-          return;
-        }
-        db.get(
-          `SELECT id FROM user
-                WHERE email = ?
-                `,
-          [email],
-          (userError, userRow) => {
-            if (userError) {
-              reject(userError);
-              return;
-            }
-            if (!userRow) {
-              reject(new ServiceError('User not found'));
-              return;
-            }
-            db.run(
-              `INSERT INTO shared_list(user_id, list_id)
-                    VALUES (?, ?) ON CONFLICT DO NOTHING
-                    `,
-              [userRow.id, listId],
-              (insertError) => {
-                if (insertError) {
-                  reject(insertError);
-                  return;
-                }
-                resolve();
-              },
-            );
-          },
-        );
-      },
-    );
-  });
+async function shareList(userId, listId, email) {
+  const list = await listRepo.getListById(listId, userId);
+  if (!list) {
+    throw new ServiceError('Forbidden');
+  }
+  const userRow = await userRepo.getUserByEmail(email);
+  if (!userRow) {
+    throw new ServiceError('User not found');
+  }
+  await listRepo.shareList(userRow.id, listId);
 }
 module.exports = {
-  getAllList: getAllLists,
+  getAllLists,
   getListById,
   createList,
   updateList,
