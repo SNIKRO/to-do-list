@@ -47,7 +47,7 @@ router.put('/:id', async (request, response) => {
 // delete list by id
 router.delete('/:id', async (request, response) => {
   try {
-    await listService.deleteList();
+    await listService.deleteList(request.params.id, request.user);
     response.sendStatus(200);
   } catch (error) {
     response.status(500).send(error.message);

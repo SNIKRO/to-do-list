@@ -1,4 +1,3 @@
-const { request } = require('express');
 const ServiceError = require('../../errors/service');
 const db = require('../../db');
 const listRepo = require('../../repositories/list');
@@ -24,55 +23,17 @@ async function getListById(listId, userId) {
   return list;
 }
 
-function createList(listName, userId) {
-  return new Promise((resolve, reject) => {
-    db.run(
-      `INSERT INTO list(name, user_id)
-           VALUES (?, ?)`,
-      [listName, userId],
-      function (error) {
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve(this.lastID);
-      },
-    );
-  });
+async function createList(listName, userId) {
+  const listId = await listRepo.createList(listName, userId);
+  return listId;
 }
 
-function updateList() {
-  return new Promise((resolve, reject) => {
-    db.run(
-      `UPDATE list SET name = ?
-      WHERE id = ? AND user_id = ?`,
-      [request.body.name, request.params.id, request.user],
-      (error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve();
-      },
-    );
-  });
+async function updateList(listName, listId, userId) {
+  await listRepo.updateList(listName, listId, userId);
 }
 
-function deleteList() {
-  return new Promise((resolve, reject) => {
-    db.run(
-      `DELETE FROM list 
-      WHERE id = ? AND user_id = ?`,
-      [request.params.id, request.user],
-      (error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve();
-      },
-    );
-  });
+async function deleteList(listId, userId) {
+  await listRepo.deleteList(listId, userId);
 }
 
 function shareList(userId, listId, email) {
