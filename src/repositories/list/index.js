@@ -1,5 +1,4 @@
 const db = require('../../db');
-const ServiceError = require('../../errors/service');
 
 function getListsByUserId(userId, limit, offset) {
   return new Promise((resolve, reject) => {
@@ -103,56 +102,23 @@ function deleteList(listId, userId) {
   });
 }
 
-function shareList(userId, listId, email) {
+function shareList(userId, listId) {
   return new Promise((resolve, reject) => {
-    db.get(
-      `SELECT id FROM list
-            WHERE user_id = ? AND id = ?
-            `,
-      [userId, listId],
-      (error, row) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        if (!row) {
-          reject(new ServiceError('Forbidden'));
-          return;
-        }
-        db.get(
-          `SELECT id FROM user
-                WHERE email = ?
-                `,
-          [email],
-          (userError, userRow) => {
-            if (userError) {
-              reject(userError);
-              return;
-            }
-            if (!userRow) {
-              reject(new ServiceError('User not found'));
-              return;
-            }
-            db.run(
-              `INSERT INTO shared_list(user_id, list_id)
+    db.run(
+      `INSERT INTO shared_list(user_id, list_id)
                     VALUES (?, ?) ON CONFLICT DO NOTHING
                     `,
-              [userRow.id, listId],
-              (insertError) => {
-                if (insertError) {
-                  reject(insertError);
-                  return;
-                }
-                resolve();
-              },
-            );
-          },
-        );
+      [userId, listId],
+      (insertError) => {
+        if (insertError) {
+          reject(insertError);
+          return;
+        }
+        resolve();
       },
     );
   });
 }
-
 module.exports = {
   getListsByUserId,
   getListsCountByUserId,
