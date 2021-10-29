@@ -1,5 +1,5 @@
 const express = require('express');
-const listService = require('../../services/items');
+const itemService = require('../../services/items');
 const ServiceError = require('../../errors/service');
 
 const router = express.Router();
@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/:listId/items', async (request, response) => {
   const { limit = 25, offset = 0 } = request.query;
   try {
-    const allList = await listService.getAllItemsById(request.user, request.params.listId, limit, offset);
+    const allList = await itemService.getAllItemsById(request.user, request.params.listId, limit, offset);
     response.send(allList);
   } catch (error) {
     response.status(500).send(error.message);
@@ -17,7 +17,7 @@ router.get('/:listId/items', async (request, response) => {
 // get single item by id
 router.get('/:listId/items/:itemID', async (request, response) => {
   try {
-    const singleList = await listService.getSingleItemById(request.params.itemID, request.params.listId, request.user);
+    const singleList = await itemService.getSingleItemById(request.params.itemID, request.params.listId, request.user);
     response.send(singleList);
   } catch (error) {
     if (error instanceof ServiceError) {
@@ -30,7 +30,7 @@ router.get('/:listId/items/:itemID', async (request, response) => {
 // create item
 router.post('/:listId/items', async (request, response) => {
   try {
-    const lastID = await listService.createList(request.params.listId, request.user, request.body.description);
+    const lastID = await itemService.createItem(request.params.listId, request.user, request.body.description);
     response.status(200).send(lastID);
   } catch (error) {
     if (error instanceof ServiceError) {
@@ -43,7 +43,7 @@ router.post('/:listId/items', async (request, response) => {
 // update item by id
 router.put('/:listId/items/:itemId', async (request, response) => {
   try {
-    await listService.createList(
+    await itemService.createItem(
       request.params.itemId,
       request.params.listId,
       request.user,
@@ -62,7 +62,7 @@ router.put('/:listId/items/:itemId', async (request, response) => {
 // delete item by id
 router.delete('/:listId/items/:itemId', async (request, response) => {
   try {
-    await listService.deleteList(request.params.listId, request.params.itemId, request.user);
+    await itemService.deleteItem(request.params.listId, request.params.itemId, request.user);
     response.sendStatus(200);
   } catch (error) {
     response.status(500).send(error.message);
