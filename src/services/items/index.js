@@ -44,10 +44,15 @@ async function updateItemById(itemId, listId, userId, status, description) {
 async function deleteItem(listId, itemId, userId) {
   await itemRepo.deleteItem(listId, itemId, userId);
 }
+
+async function createMultipleItems(items, listId) {
+  await itemRepo.insertMultipleItems(items, listId);
+}
 module.exports = {
   getAllItemsById,
   getSingleItemById,
   updateItemById,
   createItem,
   deleteItem,
+  createMultipleItems,
 };

@@ -1,5 +1,6 @@
 const express = require('express');
 const listService = require('../../services/lists');
+const itemService = require('../../services/items');
 const ServiceError = require('../../errors/service');
 
 const router = express.Router();
@@ -61,6 +62,22 @@ router.post('/:listId/share', async (request, response) => {
   } catch (error) {
     if (error instanceof ServiceError) {
       response.status(404).send(error.message);
+      return;
+    }
+    response.sendStatus(500);
+  }
+});
+
+router.post('/create-with-items', async (request, response) => {
+  try {
+    console.log(request.body);
+    const newListId = await listService.createList(request.body.list.name, request.user);
+    await itemService.createMultipleItems(request.body.items, newListId);
+    response.sendStatus(201);
+  } catch (error) {
+    console.log(error);
+    if (error instanceof ServiceError) {
+      response.status(500).send(error.message);
       return;
     }
     response.sendStatus(500);

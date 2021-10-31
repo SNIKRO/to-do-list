@@ -1,8 +1,8 @@
 const bcrypt = require('bcrypt');
 const db = require('../../db');
 
-async function getUserByEmail(email) {
-  await new Promise((resolve, reject) => {
+function getUserByEmail(email) {
+  return new Promise((resolve, reject) => {
     db.get(
       `SELECT * FROM user
         WHERE email = ?`,
@@ -12,14 +12,14 @@ async function getUserByEmail(email) {
           reject(error);
           return;
         }
-        resolve(row.count);
+        resolve(row);
       },
     );
   });
 }
 
-async function insertUser(name, email, password) {
-  await new Promise((resolve, reject) => {
+function insertUser(name, email, password) {
+  return new Promise((resolve, reject) => {
     db.run(
       `INSERT INTO user(name, email, password)
          VALUES (?, ?, ?)`,

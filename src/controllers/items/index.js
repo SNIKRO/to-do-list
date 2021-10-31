@@ -30,8 +30,8 @@ router.get('/:listId/items/:itemID', async (request, response) => {
 // create item
 router.post('/:listId/items', async (request, response) => {
   try {
-    const lastID = await itemService.createItem(request.params.listId, request.user, request.body.description);
-    response.status(200).send(lastID);
+    const itemId = await itemService.createItem(request.params.listId, request.user, request.body.description);
+    response.status(200).send(itemId);
   } catch (error) {
     if (error instanceof ServiceError) {
       response.status(400).send(error.message);
@@ -43,7 +43,7 @@ router.post('/:listId/items', async (request, response) => {
 // update item by id
 router.put('/:listId/items/:itemId', async (request, response) => {
   try {
-    await itemService.createItem(
+    await itemService.updateItemById(
       request.params.itemId,
       request.params.listId,
       request.user,

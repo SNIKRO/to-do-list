@@ -113,12 +113,31 @@ function deleteItem(listId, itemId, userId) {
   });
 }
 
+function insertMultipleItems(items, listId) {
+  return new Promise((resolve, reject) => {
+    const preparedItems = [];
+    items.forEach((item) => {
+      preparedItems.push(item.description);
+      preparedItems.push(listId);
+    });
+    const itemPlaceholders = new Array(items.length).fill('(?, ?)').join(',');
+    db.run(`INSERT INTO item(description, list_id) VALUES ${itemPlaceholders}`, [...preparedItems], (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
 module.exports = {
   getAllItemsByUserIdAndListId,
   getItemsCountByUserIdAndListId,
   getSingleItemById,
   listIdExistCheck,
   insertNewItem,
+  insertMultipleItems,
   updateItemById,
   deleteItem,
 };
