@@ -31,12 +31,14 @@ async function createItem(listId, userId, description) {
   return insertItemId;
 }
 
-async function updateListById(itemId, listId, userId, status, description) {
-  const existItem = await itemRepo.itemExistCheck(itemId, listId, userId);
+async function updateItemById(itemId, listId, userId, status, description) {
+  const existItem = await itemRepo.getAllItemsByUserIdAndListId(itemId, listId, userId);
   if (!existItem) {
     throw new ServiceError('Not found');
   }
-  await itemRepo.itemUpdateById(status, existItem, description, itemId);
+  const currentStatus = status ?? existItem.status;
+  const currentDescription = description ?? existItem.description;
+  await itemRepo.updateItemById(currentStatus, currentDescription, itemId);
 }
 
 async function deleteItem(listId, itemId, userId) {
@@ -45,7 +47,7 @@ async function deleteItem(listId, itemId, userId) {
 module.exports = {
   getAllItemsById,
   getSingleItemById,
-  updateListById,
+  updateItemById,
   createItem,
   deleteItem,
 };

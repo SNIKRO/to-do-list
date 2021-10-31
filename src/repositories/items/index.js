@@ -37,7 +37,7 @@ function getItemsCountByUserIdAndListId(listId, userId) {
   });
 }
 
-function getSingleItemByListId(itemId, listId, userId) {
+function getSingleItemById(itemId, listId, userId) {
   return new Promise((resolve, reject) => {
     db.get(
       `SELECT * FROM item 
@@ -79,37 +79,15 @@ function insertNewItem(description, listId) {
   });
 }
 
-function itemExistCheck(itemId, listId, userId) {
+function updateItemById(status, description, itemId) {
   return new Promise((resolve, reject) => {
-    db.get(
-      `SELECT * FROM item 
-            INNER JOIN list ON list.id = item.list_id 
-            WHERE item.id = ? AND item.list_id = ? AND list.user_id = ?`,
-      [itemId, listId, userId],
-      (error, row) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve(row);
-      },
-    );
-  });
-}
-
-function itemUpdateById(status, existItem, description, itemId) {
-  return new Promise((resolve, reject) => {
-    db.run(
-      'UPDATE item SET status = ?, description = ? WHERE id = ?',
-      [status ?? existItem.status, description ?? existItem.description, itemId],
-      (err) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve();
-      },
-    );
+    db.run('UPDATE item SET status = ?, description = ? WHERE id = ?', [status, description, itemId], (err) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve();
+    });
   });
 }
 
@@ -138,10 +116,9 @@ function deleteItem(listId, itemId, userId) {
 module.exports = {
   getAllItemsByUserIdAndListId,
   getItemsCountByUserIdAndListId,
-  getSingleItemByListId,
+  getSingleItemById,
   listIdExistCheck,
   insertNewItem,
-  itemExistCheck,
-  itemUpdateById,
+  updateItemById,
   deleteItem,
 };
