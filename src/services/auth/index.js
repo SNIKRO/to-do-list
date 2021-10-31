@@ -1,137 +1,49 @@
 const jwt = require('jsonwebtoken'); // access token
-const { v4: uuid } = require('uuid');// refresh token
+const { v4: uuid } = require('uuid'); // refresh token
 const bcrypt = require('bcrypt');
 const config = require('../../../config.json');
-const db = require('../../db');
 const ServiceError = require('../../errors/service');
+const userRepo = require('../../repositories/user');
+const tokenRepo = require('../../repositories/token');
 
-function signIn(email, password) {
-  return new Promise(
-    (resolve, reject) => {
-      db.get(`SELECT id, password FROM user 
-      WHERE email = ? `,
-      [email],
-      (error, row) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        if (!row
-          || !bcrypt.compareSync(password, row.password)) {
-          reject(new ServiceError('Pair email/password is incorrect'));
-          return;
-        }
-        const accessToken = jwt.sign({ userId: row.id }, config.KEY);
-        const refreshToken = uuid();
-        db.run(`INSERT INTO token(user_id, token) 
-          VALUES (?,?)`,
-        [row.id, refreshToken], (err) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve({ accessToken, refreshToken });
-        });
-      });
-    },
-  );
+async function signIn(email, password) {
+  const user = await userRepo.getUserByEmail(email);
+  if (!user || !bcrypt.compareSync(password, user.password)) {
+    throw new ServiceError('Pair email/password is incorrect');
+  }
+  const accessToken = jwt.sign({ userId: user.id }, config.KEY);
+  const refreshToken = uuid();
+
+  tokenRepo.insertToken(user.id, refreshToken);
+  return { accessToken, refreshToken };
 }
 
-function signUp(name, email, password) {
-  return new Promise(
-    (resolve, reject) => {
-      db.get(
-        `SELECT id FROM user
-        WHERE email = ?`,
-        [email],
-        (error, row) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          if (row) {
-            reject(new ServiceError('email has been taken'));
-            return;
-          }
-          db.run(
-            'INSERT INTO user(name, email, password) VALUES (?, ?, ?)',
-            [
-              name,
-              email,
-              bcrypt.hashSync(password, bcrypt.genSaltSync(10), null),
-            ],
-            (insertionError) => {
-              if (insertionError) {
-                reject(insertionError);
-                return;
-              }
-              resolve();
-            },
-          );
-        },
-      );
-    },
-  );
+async function signUp(name, email, password) {
+  const user = await userRepo.getUserByEmail(email);
+  if (user) {
+    throw new ServiceError('Email has been taken');
+  }
+  await userRepo.insertUser(name, email, password);
 }
 
-function logOut(userId) {
-  return new Promise(
-    (resolve, reject) => {
-      db.run(
-        `DELETE FROM token 
-        WHERE user_id = ? 
-        `,
-        [userId],
-        (error) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          resolve();
-        },
-      );
-    },
-  );
+async function logOut(userId) {
+  await tokenRepo.deleteTokenByUserId(userId);
 }
 
-function refresh(userId, oldRefreshToken) {
-  return new Promise(
-    (resolve, reject) => {
-      db.get(
-        `SELECT count(*) as count FROM token
-        WHERE user_id = ? AND token = ?
-        `,
-        [userId, oldRefreshToken],
-        (error, row) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          if (row.count === 0) {
-            reject(new ServiceError('User unauthorized'));
-            return;
-          }
-          const accessToken = jwt.sign({ userID: userId }, config.KEY);
-          const refreshToken = uuid();
-          db.run(
-            `UPDATE token SET token = ?
-            WHERE user_id = ? AND token = ?
-            `,
-            [refreshToken, userId, oldRefreshToken],
-            (updateError) => {
-              if (updateError) {
-                reject(updateError);
-                return;
-              }
-              resolve({ accessToken, refreshToken });
-            },
-          );
-        },
-      );
-    },
-  );
+async function refreshTokensPair(userId, oldRefreshToken) {
+  const accessToken = jwt.sign({ userID: userId }, config.KEY);
+  const refreshToken = uuid();
+  const tokenExists = !!(await tokenRepo.getTokenCount(userId, oldRefreshToken));
+  if (!tokenExists) {
+    throw new ServiceError('User unauthorized');
+  }
+  await tokenRepo.refreshUserToken(userId, oldRefreshToken, accessToken, refreshToken);
+  return { accessToken, refreshToken };
 }
 
 module.exports = {
-  signIn, signUp, logOut, refresh,
+  signIn,
+  signUp,
+  logOut,
+  refreshTokensPair,
 };

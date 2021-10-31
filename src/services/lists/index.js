@@ -1,178 +1,54 @@
-const { request } = require('express');
 const ServiceError = require('../../errors/service');
-const db = require('../../db');
+const listRepo = require('../../repositories/list');
+const userRepo = require('../../repositories/user');
 
-function getAllList(userId, limit, offset) {
-  return new Promise(
-    (resolve, reject) => {
-      db.all(
-        `SELECT * FROM list 
-        WHERE user_id = ? LIMIT ? OFFSET ? `,
-        [userId, limit, offset],
-        (error, rows) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          db.get(
-            `SELECT Count(id) as total FROM list
-            WHERE user_id = ?`,
-            [userId],
-            (err, count) => {
-              if (err) {
-                reject(err);
-                return;
-              }
-              resolve({
-                rows,
-                pagination: {
-                  limit,
-                  offset,
-                  total: count.total,
-                },
-              });
-            },
-          );
-        },
-      );
+async function getAllLists(userId, limit, offset) {
+  const lists = await listRepo.getListsByUserId(userId, limit, offset);
+  const total = await listRepo.getListsCountByUserId(userId);
+  return {
+    rows: lists,
+    pagination: {
+      limit,
+      offset,
+      total,
     },
-
-  );
+  };
 }
 
-function getListById(listId, userId) {
-  return new Promise(
-    (resolve, reject) => {
-      db.get(
-        `SELECT * FROM list
-          WHERE id = ? AND user_id = ?`,
-        [listId, userId],
-        (error, row) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          if (row === undefined) {
-            reject(new ServiceError('Not found'));
-            return;
-          }
-          resolve(row);
-        },
-      );
-    },
-  );
+async function getListById(listId, userId) {
+  const list = await listRepo.getListById(listId, userId);
+  if (list === undefined) {
+    throw new ServiceError('Not found');
+  }
+  return list;
 }
 
-function createList(listName, userId) {
-  return new Promise(
-    (resolve, reject) => {
-      db.run(
-        `INSERT INTO list(name, user_id)
-           VALUES (?, ?)`,
-        [listName, userId],
-        function (error) {
-          if (error) {
-            reject(error);
-            return;
-          }
-          resolve(this.lastID);
-        },
-      );
-    },
-  );
+async function createList(listName, userId) {
+  const listId = await listRepo.createList(listName, userId);
+  return listId;
 }
 
-function updateList() {
-  return new Promise(
-    (resolve, reject) => {
-      db.run(
-        `UPDATE list SET name = ?
-      WHERE id = ? AND user_id = ?`,
-        [request.body.name, request.params.id, request.user],
-        (error) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          resolve();
-        },
-      );
-    },
-  );
+async function updateList(listName, listId, userId) {
+  await listRepo.updateList(listName, listId, userId);
 }
 
-function deleteList() {
-  return new Promise(
-    (resolve, reject) => {
-      db.run(
-        `DELETE FROM list 
-      WHERE id = ? AND user_id = ?`,
-        [request.params.id, request.user],
-        (error) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          resolve();
-        },
-      );
-    },
-  );
+async function deleteList(listId, userId) {
+  await listRepo.deleteList(listId, userId);
 }
 
-function shareList(userId, listId, email) {
-  return new Promise(
-    (resolve, reject) => {
-      db.get(
-        `SELECT id FROM list
-            WHERE user_id = ? AND id = ?
-            `,
-        [userId, listId],
-        (error, row) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          if (!row) {
-            reject(new ServiceError('Forbidden'));
-            return;
-          }
-          db.get(
-            `SELECT id FROM user
-                WHERE email = ?
-                `,
-            [email],
-            (userError, userRow) => {
-              if (userError) {
-                reject(userError);
-                return;
-              }
-              if (!userRow) {
-                reject(new ServiceError('User not found'));
-                return;
-              }
-              db.run(
-                `INSERT INTO shared_list(user_id, list_id)
-                    VALUES (?, ?) ON CONFLICT DO NOTHING
-                    `,
-                [userRow.id, listId],
-                (insertError) => {
-                  if (insertError) {
-                    reject(insertError);
-                    return;
-                  }
-                  resolve();
-                },
-              );
-            },
-          );
-        },
-      );
-    },
-  );
+async function shareList(userId, listId, email) {
+  const list = await listRepo.getListById(listId, userId);
+  if (!list) {
+    throw new ServiceError('Forbidden');
+  }
+  const userRow = await userRepo.getUserByEmail(email);
+  if (!userRow) {
+    throw new ServiceError('User not found');
+  }
+  await listRepo.shareList(userRow.id, listId);
 }
 module.exports = {
-  getAllList,
+  getAllLists,
   getListById,
   createList,
   updateList,

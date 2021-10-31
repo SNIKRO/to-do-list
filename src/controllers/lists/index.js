@@ -5,10 +5,7 @@ const ServiceError = require('../../errors/service');
 const router = express.Router();
 // take all list
 router.get('/', async (request, response) => {
-  const {
-    limit = 25,
-    offset = 0,
-  } = request.query;
+  const { limit = 25, offset = 0 } = request.query;
   try {
     const allLists = await listService.getAllList(request.user, limit, offset);
     response.send(allLists);
@@ -50,7 +47,7 @@ router.put('/:id', async (request, response) => {
 // delete list by id
 router.delete('/:id', async (request, response) => {
   try {
-    await listService.deleteList();
+    await listService.deleteList(request.params.id, request.user);
     response.sendStatus(200);
   } catch (error) {
     response.status(500).send(error.message);
