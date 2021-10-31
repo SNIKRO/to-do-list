@@ -1,136 +1,86 @@
 const express = require('express');
-const db = require('../../db');
+const listService = require('../../services/lists');
+const itemService = require('../../services/items');
+const ServiceError = require('../../errors/service');
 
 const router = express.Router();
 // take all list
-router.get('/', (request, response) => {
-  const {
-    limit = 25,
-    offset = 0,
-  } = request.query;
-
-  db.all('SELECT * FROM list WHERE user_id = ? LIMIT ? OFFSET ? ', [request.user, limit, offset], (error, rows) => {
-    if (error) {
-      console.error(error.message);
-      response.sendStatus(500);
-      return;
-    }
-    db.get('SELECT Count(id) as total FROM list WHERE user_id = ?', [request.user], (err, count) => {
-      if (err) {
-        console.error(error.message);
-        response.sendStatus(500);
-        return;
-      }
-      response.send({
-        rows,
-        pagination: {
-          limit,
-          offset,
-          total: count.total,
-        },
-      });
-    });
-  });
+router.get('/', async (request, response) => {
+  const { limit = 25, offset = 0 } = request.query;
+  try {
+    const allLists = await listService.getAllList(request.user, limit, offset);
+    response.send(allLists);
+  } catch (error) {
+    response.status(500).send(error.message);
+  }
 });
 // request list by id
-router.get('/:id', (request, response) => {
-  db.get('SELECT * FROM list WHERE id = ? AND user_id = ?', [request.params.id, request.user], (error, row) => {
-    if (error) {
-      console.error(error.message);
-      response.sendStatus(500);
+router.get('/:id', async (request, response) => {
+  try {
+    const listById = await listService.getListById(request.params.id, request.user);
+    response.send(listById);
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      response.status(404).send(error.message);
       return;
     }
-    if (row === undefined) {
-      response.sendStatus(404);
-      return;
-    }
-    response.send(row);
-  });
+    response.sendStatus(500);
+  }
 });
 // create new list
-router.post('/', (request, response) => {
-  db.run('INSERT INTO list(name, user_id) VALUES (?, ?)',
-    [request.body.name, request.user],
-    function (error) {
-      if (error) {
-        console.error(error.message);
-        response.sendStatus(500);
-        return;
-      }
-      response.status(201).json(this.lastID);
-    });
+router.post('/', async (request, response) => {
+  try {
+    const newListId = await listService.createList(request.body.name, request.user);
+    response.status(201).send(newListId);
+  } catch (error) {
+    response.status(500).send(error.message);
+  }
 });
 // change list by id
-router.put('/:id', (request, response) => {
-  db.run('UPDATE list SET name = ? WHERE id = ? AND user_id = ?', [request.body.name, request.params.id, request.user], (error) => {
-    if (error) {
-      console.error(error.message);
-      response.sendStatus(500);
-      return;
-    }
+router.put('/:id', async (request, response) => {
+  try {
+    await listService.updateList(request.body.name, request.params.id, request.user);
     response.sendStatus(200);
-  });
+  } catch (error) {
+    response.status(500).send(error.message);
+  }
 });
 // delete list by id
-router.delete('/:id', (request, response) => {
-  db.run('DELETE FROM list WHERE id = ? AND user_id = ?', [request.params.id, request.user], (error) => {
-    if (error) {
-      console.error(error.message);
-      response.sendStatus(500);
-      return;
-    }
+router.delete('/:id', async (request, response) => {
+  try {
+    await listService.deleteList(request.params.id, request.user);
     response.sendStatus(200);
-  });
+  } catch (error) {
+    response.status(500).send(error.message);
+  }
 });
 // shared list
-router.post('/:listId/share', (request, response) => {
-  db.get(
-    `SELECT id FROM list
-    WHERE user_id = ? AND id = ?
-    `,
-    [request.user, request.params.listId],
-    (error, row) => {
-      if (error) {
-        console.error(error.message);
-        response.sendStatus(500);
-        return;
-      }
-      if (!row) {
-        response.sendStatus(403);
-        return;
-      }
-      db.get(
-        `SELECT id FROM user
-        WHERE email = ?
-        `,
-        [request.body.email],
-        (userError, userRow) => {
-          if (userError) {
-            console.error(userError.message);
-            response.sendStatus(500);
-            return;
-          }
-          if (!userRow) {
-            response.status(404).send('User not found');
-            return;
-          }
-          db.run(
-            `INSERT INTO shared_list(user_id, list_id)
-            VALUES (?, ?) ON CONFLICT DO NOTHING
-            `,
-            [userRow.id, request.params.listId],
-            (insertError) => {
-              if (insertError) {
-                console.error(insertError.message);
-                response.sendStatus(500);
-                return;
-              }
-              response.send('List is shared to user');
-            },
-          );
-        },
-      );
-    },
-  );
+router.post('/:listId/share', async (request, response) => {
+  try {
+    await listService.shareList(request.user, request.params.listId, request.body.email);
+    response.send('List is shared to user');
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      response.status(404).send(error.message);
+      return;
+    }
+    response.sendStatus(500);
+  }
+});
+
+router.post('/create-with-items', async (request, response) => {
+  try {
+    console.log(request.body);
+    const newListId = await listService.createList(request.body.list.name, request.user);
+    await itemService.createMultipleItems(request.body.items, newListId);
+    response.sendStatus(201);
+  } catch (error) {
+    console.log(error);
+    if (error instanceof ServiceError) {
+      response.status(500).send(error.message);
+      return;
+    }
+    response.sendStatus(500);
+  }
 });
 module.exports = router;

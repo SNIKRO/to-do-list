@@ -1,150 +1,72 @@
 const express = require('express');
-const db = require('../../db');
+const itemService = require('../../services/items');
+const ServiceError = require('../../errors/service');
 
 const router = express.Router();
 
 // get all item by list id
-router.get('/:listId/items', (request, response) => {
-  const {
-    limit = 25,
-    offset = 0,
-  } = request.query;
-
-  db.all(
-    `SELECT * FROM item 
-    INNER JOIN list ON item.list_id = list.id 
-    WHERE item.list_id = ? AND list.user_id = ? 
-    LIMIT ? OFFSET ? `,
-    [request.user, request.params.listId, limit, offset],
-    (error, rows) => {
-      if (error) {
-        console.error(error.message);
-        response.sendStatus(500);
-        return;
-      }
-      db.get(
-        `SELECT Count(id) as total FROM item 
-        INNER JOIN list ON item.list_id = list.id 
-        WHERE item.list_id = ? AND list.user_id = ?`,
-        [request.params.listId],
-        (err, count) => {
-          if (err) {
-            console.error(error.message);
-            response.sendStatus(500);
-            return;
-          }
-          response.send({
-            rows,
-            pagination: {
-              limit,
-              offset,
-              total: count.total,
-            },
-          });
-        },
-      );
-    },
-  );
+router.get('/:listId/items', async (request, response) => {
+  const { limit = 25, offset = 0 } = request.query;
+  try {
+    const allList = await itemService.getAllItemsById(request.user, request.params.listId, limit, offset);
+    response.send(allList);
+  } catch (error) {
+    response.status(500).send(error.message);
+  }
 });
 // get single item by id
-router.get('/:listId/items/:itemID', (request, response) => {
-  db.get(
-    `SELECT * FROM item 
-    INNER JOIN list ON list.id = item.list_id
-    WHERE item.id = ? AND item.list_id = ? AND list.user_id = ?`,
-    [request.params.itemID, request.params.listId, request.user],
-    (error, row) => {
-      if (error) {
-        console.error(error.message);
-        response.sendStatus(500);
-        return;
-      }
-      if (!row) {
-        response.sendStatus(404);
-        return;
-      }
-      response.send(row);
-    },
-  );
+router.get('/:listId/items/:itemID', async (request, response) => {
+  try {
+    const singleList = await itemService.getSingleItemById(request.params.itemID, request.params.listId, request.user);
+    response.send(singleList);
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      response.status(404).send(error.message);
+      return;
+    }
+    response.sendStatus(500);
+  }
 });
 // create item
-router.post('/:listId/items', (request, response) => {
-  db.get('SELECT id FROM list WHERE id = ? AND user_id = ?',
-    [request.params.listId, request.user],
-    (checkError, row) => {
-      if (checkError) {
-        console.error(checkError.message);
-        response.sendStatus(500);
-        return;
-      }
-      if (!row) {
-        response.sendStatus(400);
-        return;
-      }
-      db.run('INSERT INTO item(description, list_id) VALUES (?, ?)',
-        [request.body.description, request.params.listId],
-        function (error) {
-          if (error) {
-            console.error(error.message);
-            response.sendStatus(500);
-            return;
-          }
-          response.status(200).json(this.lastID);
-        });
-    });
+router.post('/:listId/items', async (request, response) => {
+  try {
+    const itemId = await itemService.createItem(request.params.listId, request.user, request.body.description);
+    response.status(200).send(itemId);
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      response.status(400).send(error.message);
+      return;
+    }
+    response.sendStatus(500);
+  }
 });
 // update item by id
-router.put('/:listId/items/:itemId', (request, response) => {
-  db.get(
-    `SELECT * FROM item 
-    INNER JOIN list ON list.id = item.list_id 
-    WHERE item.id = ? AND item.list_id = ? AND list.user_id = ?`,
-    [request.params.itemId, request.params.listId, request.user],
-    (error, row) => {
-      if (error) {
-        console.error(error.message);
-        response.sendStatus(500);
-        return;
-      }
-      if (!row) {
-        response.sendStatus(404);
-        return;
-      }
-      db.run('UPDATE item SET status = ?, description = ? WHERE id = ?',
-        [
-          request.body.status ?? row.status,
-          request.body.description ?? row.description,
-          request.params.itemId,
-        ],
-        (err) => {
-          if (err) {
-            console.error(error.message);
-            response.sendStatus(500);
-          }
-          response.sendStatus(200);
-        });
-    },
-  );
+router.put('/:listId/items/:itemId', async (request, response) => {
+  try {
+    await itemService.updateItemById(
+      request.params.itemId,
+      request.params.listId,
+      request.user,
+      request.body.status,
+      request.body.description,
+    );
+    response.sendStatus(200);
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      response.status(404).send(error.message);
+      return;
+    }
+    response.sendStatus(500);
+  }
 });
 // delete item by id
-router.delete('/:listId/items/:itemId', (request, response) => {
-  db.run(
-    `DELETE FROM item 
-    WHERE item.id IN (
-      SELECT item.id
-      FROM item
-      INNER JOIN list ON item.list_id = list.id 
-      WHERE item.list_id = ? AND item.id = ? AND list.user_id = ?
-    )`,
-    [request.params.listId, request.params.itemId, request.user],
-    (error) => {
-      if (error) {
-        console.error(error.message);
-        response.sendStatus(500);
-      }
-      response.sendStatus(200);
-    },
-  );
+router.delete('/:listId/items/:itemId', async (request, response) => {
+  try {
+    await itemService.deleteItem(request.params.listId, request.params.itemId, request.user);
+    response.sendStatus(200);
+  } catch (error) {
+    response.status(500).send(error.message);
+  }
 });
 
 module.exports = router;
