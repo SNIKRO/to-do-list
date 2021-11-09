@@ -1,3 +1,7 @@
+// eslint-disable-next-line import/order
+const utils = require('./utils');
+utils.loadEnv();
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const JwtStrategy = require('passport-jwt').Strategy;
@@ -5,7 +9,6 @@ const { ExtractJwt } = require('passport-jwt');
 const cors = require('cors');
 const multer = require('multer');
 const passport = require('passport');
-const config = require('../config.json');
 const listRouter = require('./controllers/lists');
 const itemRouter = require('./controllers/items');
 const authRouter = require('./controllers/auth');
@@ -18,7 +21,7 @@ app.use(cors());
 
 const opts = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: config.KEY,
+  secretOrKey: process.env.KEY,
 };
 passport.use(
   new JwtStrategy(opts, (jwtPayload, done) => {
