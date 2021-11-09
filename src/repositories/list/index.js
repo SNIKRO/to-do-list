@@ -1,6 +1,7 @@
-const db = require('../../db');
+const dataBase = require('../../db');
 
 function getListsByUserId(userId, limit, offset) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.all(
       `SELECT * FROM list 
@@ -18,6 +19,7 @@ function getListsByUserId(userId, limit, offset) {
 }
 
 function getListsCountByUserId(userId) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.get(
       `SELECT Count(id) as total FROM list
@@ -35,6 +37,7 @@ function getListsCountByUserId(userId) {
 }
 
 function getListById(listId, userId) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.get(
       `SELECT * FROM list
@@ -52,6 +55,7 @@ function getListById(listId, userId) {
 }
 
 function createList(listName, userId) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.run(
       `INSERT INTO list(name, user_id)
@@ -69,6 +73,7 @@ function createList(listName, userId) {
 }
 
 function updateList(listName, listId, userId) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.run(
       `UPDATE list SET name = ?
@@ -86,6 +91,7 @@ function updateList(listName, listId, userId) {
 }
 
 function deleteList(listId, userId) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.run(
       `DELETE FROM list 
@@ -103,6 +109,7 @@ function deleteList(listId, userId) {
 }
 
 function shareList(userId, listId) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.run(
       `INSERT INTO shared_list(user_id, list_id)

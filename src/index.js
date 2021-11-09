@@ -1,6 +1,4 @@
-// eslint-disable-next-line import/order
-const utils = require('./utils');
-utils.loadEnv();
+require('./utils').loadEnv();
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -13,6 +11,7 @@ const listRouter = require('./controllers/lists');
 const itemRouter = require('./controllers/items');
 const authRouter = require('./controllers/auth');
 const authMiddleware = require('./middlewares/auth');
+const dataBase = require('./db');
 
 const app = express();
 const upload = multer();
@@ -39,6 +38,11 @@ app.use('/', upload.array(), authRouter);
 app.use('/lists', authMiddleware, listRouter);
 app.use('/lists', authMiddleware, itemRouter);
 
-app.listen(5000, undefined, () => {
-  console.log('Server is online');
-});
+async function runApp() {
+  await dataBase.initDb();
+  console.log('Data base is connected');
+  app.listen(5000, undefined, () => {
+    console.log('Server is online');
+  });
+}
+runApp();

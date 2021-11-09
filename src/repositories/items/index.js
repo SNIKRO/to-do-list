@@ -1,6 +1,7 @@
-const db = require('../../db');
+const dataBase = require('../../db');
 
 function getAllItemsByUserIdAndListId(userId, listId, limit, offset) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.all(
       `SELECT * FROM item 
@@ -20,6 +21,7 @@ function getAllItemsByUserIdAndListId(userId, listId, limit, offset) {
 }
 
 function getItemsCountByUserIdAndListId(listId, userId) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.get(
       `SELECT Count(id) as total FROM item 
@@ -38,6 +40,7 @@ function getItemsCountByUserIdAndListId(listId, userId) {
 }
 
 function getSingleItemById(itemId, listId, userId) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.get(
       `SELECT * FROM item 
@@ -56,6 +59,7 @@ function getSingleItemById(itemId, listId, userId) {
 }
 
 function listIdExistCheck(listId, userId) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.get('SELECT id FROM list WHERE id = ? AND user_id = ?', [listId, userId], (checkError, row) => {
       if (checkError) {
@@ -68,6 +72,7 @@ function listIdExistCheck(listId, userId) {
 }
 
 function insertNewItem(description, listId) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.run('INSERT INTO item(description, list_id) VALUES (?, ?)', [description, listId], function (error) {
       if (error) {
@@ -80,6 +85,7 @@ function insertNewItem(description, listId) {
 }
 
 function updateItemById(status, description, itemId) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.run('UPDATE item SET status = ?, description = ? WHERE id = ?', [status, description, itemId], (err) => {
       if (err) {
@@ -92,6 +98,7 @@ function updateItemById(status, description, itemId) {
 }
 
 function deleteItem(listId, itemId, userId) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.run(
       `DELETE FROM item 
@@ -114,6 +121,7 @@ function deleteItem(listId, itemId, userId) {
 }
 
 function insertMultipleItems(items, listId) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     const preparedItems = [];
     items.forEach((item) => {

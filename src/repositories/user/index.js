@@ -1,7 +1,8 @@
 const bcrypt = require('bcrypt');
-const db = require('../../db');
+const dataBase = require('../../db');
 
 function getUserByEmail(email) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.get(
       `SELECT * FROM user
@@ -19,6 +20,7 @@ function getUserByEmail(email) {
 }
 
 function insertUser(name, email, password) {
+  const db = dataBase.getConnection();
   return new Promise((resolve, reject) => {
     db.run(
       `INSERT INTO user(name, email, password)

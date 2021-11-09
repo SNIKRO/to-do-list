@@ -1,5 +1,7 @@
-const utils = require('./src/utils');
+require('./src/utils').loadEnv();
+
+const dataBase = require('./src/db');
 
 module.exports = async () => {
-  utils.loadEnv();
+  await dataBase.initDb();
 };

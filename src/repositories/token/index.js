@@ -1,6 +1,7 @@
-const db = require('../../db');
+const dataBase = require('../../db');
 
 async function insertToken(userId, refreshToken) {
+  const db = dataBase.getConnection();
   await new Promise((resolve, reject) => {
     db.run(
       `INSERT INTO token(user_id, token) 
@@ -18,6 +19,7 @@ async function insertToken(userId, refreshToken) {
 }
 
 async function getTokenCount(userId, oldRefreshToken) {
+  const db = dataBase.getConnection();
   await new Promise((resolve, reject) => {
     db.get(
       `SELECT count(*) as count FROM token
@@ -36,6 +38,7 @@ async function getTokenCount(userId, oldRefreshToken) {
 }
 
 async function refreshUserToken(userId, oldRefreshToken, refreshToken) {
+  const db = dataBase.getConnection();
   await new Promise((resolve, reject) => {
     db.run(
       `UPDATE token SET token = ?
@@ -53,6 +56,7 @@ async function refreshUserToken(userId, oldRefreshToken, refreshToken) {
   });
 }
 async function deleteTokenByUserId(userId) {
+  const db = dataBase.getConnection();
   await new Promise((resolve, reject) => {
     db.run(
       `DELETE FROM token 
