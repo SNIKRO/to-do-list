@@ -28,7 +28,81 @@ class DataBase {
             },
           );
         });
-        resolve(Promise.all([createUsers]));
+
+        const createTokens = new Promise((resolveToken, rejectToken) => {
+          this.db.run(
+            `CREATE TABLE IF NOT EXISTS token(
+          user_id integer not null,
+          token text UNIQUE not null,
+          FOREIGN KEY (user_id) REFERENCES user(id)
+  )`,
+            (tokenError) => {
+              if (tokenError) {
+                rejectToken(tokenError);
+                return;
+              }
+              resolveToken();
+            },
+          );
+        });
+
+        const createLists = new Promise((resolveList, rejectList) => {
+          this.db.run(
+            `CREATE TABLE IF NOT EXISTS list (
+            id integer primary key,
+            name text not null,
+             user_id integer,
+            FOREIGN KEY(user_id) REFERENCES user(id)
+  )`,
+            (listError) => {
+              if (listError) {
+                rejectList(listError);
+                return;
+              }
+              resolveList();
+            },
+          );
+        });
+
+        const createItems = new Promise((resolveItems, rejectItems) => {
+          this.db.run(
+            `CREATE TABLE IF NOT EXISTS item (
+             id integer primary key,
+             description text not null,
+             status integer check (status BETWEEN 0 AND 1) default (0) not null,
+             list_id integer,
+              FOREIGN KEY(list_id) REFERENCES list(id)
+  ) `,
+            (itemError) => {
+              if (itemError) {
+                rejectItems(itemError);
+                return;
+              }
+              resolveItems();
+            },
+          );
+        });
+
+        const createSharedList = new Promise((resolveSharedList, rejectSharedList) => {
+          this.db.run(
+            `CREATE TABLE IF NOT EXISTS shared_list (
+           user_id integer not null,
+           list_id integer not null,
+           FOREIGN KEY(user_id) REFERENCES user(id),
+           FOREIGN KEY(list_id) REFERENCES list(id),
+           UNIQUE(user_id, list_id)
+  )`,
+            (sharedError) => {
+              if (sharedError) {
+                rejectSharedList(sharedError);
+                return;
+              }
+              resolveSharedList();
+            },
+          );
+        });
+        console.log('Connected to the database.');
+        resolve(Promise.all([createUsers, createTokens, createLists, createItems, createSharedList]));
       });
     });
   }
